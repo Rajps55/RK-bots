@@ -77,6 +77,7 @@ COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Files')
 
 # Links
 SUPPORT_LINK = environ.get('SUPPORT_LINK', 'https://t.me/Netfilix_movie_shaport')
+OWNER_USERNAME = environ.get("OWNER_USERNAME", "https://t.me/CoderRzps")
 UPDATES_LINK = environ.get('UPDATES_LINK', 'https://t.me/+Ie4mNf6lL5RjYjM1')
 FILMS_LINK = environ.get('FILMS_LINK', 'https://t.me/n_flixmovie')
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/APSmo/7")
@@ -114,7 +115,7 @@ SHORTLINK = is_enabled('SHORTLINK', True)
 
 
 PAYMENT_QR = environ.get('PAYMENT_QR', 'https://i.postimg.cc/NFbZ4r7L/Google-Pay-QR-2.png') #telegraph link of your QR code 
-UPI_ID = environ.get('UPI_ID', 'singhayush88805@okaxis') # Add your upi id here
+OWNER_UPI_ID = environ.get('UPI_ID', 'singhayush88805@okaxis') # Add your upi id here
 # for stream
 IS_STREAM = is_enabled('IS_STREAM', True) #true if you want stream feature active in your bot
 BIN_CHANNEL = environ.get("BIN_CHANNEL", "-1002237538640") #if is_stream = true then add a channel id ex: -10026393639
