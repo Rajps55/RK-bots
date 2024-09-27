@@ -1,9 +1,9 @@
 import logging
-from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
+from pyrogram.errors import UserNotParticipant, FloodWait
 from info import AUTH_CHANNEL, LONG_IMDB_DESCRIPTION
 from imdb import Cinemagoer
 import asyncio
-from pyrogram.types import Message, InlineKeyboardButton, ChatJoinRequest
+from pyrogram.types import Message, InlineKeyboardButton
 from pyrogram import enums
 import os
 import pytz
@@ -138,16 +138,16 @@ async def get_verify_status(user_id):
         temp.VERIFICATIONS[user_id] = verify
     return verify
 
-async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
+async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link="", expire_time=0):
     current = await get_verify_status(user_id)
     current['verify_token'] = verify_token
     current['is_verified'] = is_verified
     current['verified_time'] = verified_time
     current['link'] = link
+    current['expire_time'] = expire_time
     temp.VERIFICATIONS[user_id] = current
     await db.update_verify_status(user_id, current)
-    
-    
+        
 async def broadcast_messages(user_id, message, pin):
     try:
         m = await message.copy(chat_id=user_id)
