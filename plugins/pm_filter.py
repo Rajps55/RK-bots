@@ -16,7 +16,7 @@ from fuzzywuzzy import process
 
 BUTTONS = {}
 CAP = {}
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["👍", "❤️", "😂", "🔥"]  # वैलिड इमोजी का प्रयोग करें
 
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def aks_downloader(bot, query):
