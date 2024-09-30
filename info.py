@@ -1,3 +1,4 @@
+
 import re, logging
 from os import environ
 from Script import script
@@ -17,13 +18,13 @@ def is_valid_ip(ip):
     return re.match(ip_pattern, ip) is not None
 
 # Bot information
-API_ID = environ.get('API_ID', '')  #api id of your telegram id
+API_ID = environ.get('API_ID', '27002519')  #api id of your telegram id
 if len(API_ID) == 0:
     print('Error - API_ID is missing, exiting now')
     exit()
 else:
     API_ID = int(API_ID)
-API_HASH = environ.get('API_HASH', '') #api hash of your telegram id
+API_HASH = environ.get('API_HASH', '1033ee721101d78366b4ac46aadf3930') #api hash of your telegram id
 if len(API_HASH) == 0:
     print('Error - API_HASH is missing, exiting now')
     exit()
@@ -77,7 +78,6 @@ COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Files')
 
 # Links
 SUPPORT_LINK = environ.get('SUPPORT_LINK', 'https://t.me/Netfilix_movie_shaport')
-OWNER_USERNAME = environ.get("OWNER_USERNAME", "https://t.me/CoderRzps")
 UPDATES_LINK = environ.get('UPDATES_LINK', 'https://t.me/+Ie4mNf6lL5RjYjM1')
 FILMS_LINK = environ.get('FILMS_LINK', 'https://t.me/n_flixmovie')
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/APSmo/7")
@@ -115,7 +115,7 @@ SHORTLINK = is_enabled('SHORTLINK', True)
 
 
 PAYMENT_QR = environ.get('PAYMENT_QR', 'https://i.postimg.cc/NFbZ4r7L/Google-Pay-QR-2.png') #telegraph link of your QR code 
-OWNER_UPI_ID = environ.get('UPI_ID', 'singhayush88805@okaxis') # Add your upi id here
+UPI_ID = environ.get('UPI_ID', 'singhayush88805@okaxis') # Add your upi id here
 # for stream
 IS_STREAM = is_enabled('IS_STREAM', True) #true if you want stream feature active in your bot
 BIN_CHANNEL = environ.get("BIN_CHANNEL", "-1002237538640") #if is_stream = true then add a channel id ex: -10026393639
