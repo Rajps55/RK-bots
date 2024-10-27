@@ -243,8 +243,8 @@ async def handle_admin_mention(client, message, admin_id):
             )
     except Exception as e:
         logging.error(f"Error forwarding message to admin: {e}")
- """                                   
-@Client.on_message(filters.private & filters.text)
+                                   
+"""@Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
     if PM_SEARCH:
         await auto_filter(client, message)
