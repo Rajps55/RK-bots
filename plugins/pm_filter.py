@@ -986,12 +986,10 @@ async def auto_filter(client, msg, spoll=False):
 
     btn.append([InlineKeyboardButton("🚫 Close 🚫", callback_data="close_data")])
     return btn
-    
-
-# Function to format the caption for the response message
-async def format_caption(imdb, settings, search, message):
+    imdb = await get_poster(search, file=(files[0]).file_name) if settings["imdb"] else None
+    TEMPLATE = settings['template']
     if imdb:
-        return settings['template'].format(
+        cap = TEMPLATE.format(
             query=search,
             title=imdb['title'],
             votes=imdb['votes'],
@@ -1006,7 +1004,8 @@ async def format_caption(imdb, settings, search, message):
             countries=imdb["countries"],
             certificates=imdb["certificates"],
             languages=imdb["languages"],
-            director=imdb["director"],
+            director=imdb["directo
+            r"],
             writer=imdb["writer"],
             producer=imdb["producer"],
             composer=imdb["composer"],
@@ -1023,44 +1022,76 @@ async def format_caption(imdb, settings, search, message):
             **locals()
         )
     else:
-        return f"<b>💭 Hey {message.from_user.mention},\n♻️ Here I found for your search: {search}...</b>"
-
-# Function to send the response message based on the search results
-async def send_response(imdb, cap, files_link, del_msg, btn, message):
+        cap = f"<b>💭 ʜᴇʏ {message.from_user.mention},\n♻️ ʜᴇʀᴇ ɪ ꜰᴏᴜɴᴅ ꜰᴏʀ ʏᴏᴜʀ sᴇᴀʀᴄʜ {search}...</b>"
+    CAP[key] = cap
+    del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
     if imdb and imdb.get('poster'):
-        await message.delete()
         try:
-            k = await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML, quote=True)
+            if settings["auto_delete"]:
+                await delSticker(thinkStc)
+                k = await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
+                await asyncio.sleep(DELETE_TIME)
+                await k.delete()
+                try:
+                    await message.delete()
+                except:
+                    pass
+            else:
+                await delSticker(thinkStc)
+                await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
+        except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
+            pic = imdb.get('poster')
+            poster = pic.replace('.jpg', "._V1_UX360.jpg")
+            if settings["auto_delete"]:
+                await delSticker(thinkStc)
+                k = await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
+                await asyncio.sleep(DELETE_TIME)
+                await k.delete()
+                try:
+                    await message.delete()
+                except:
+                    pass
+            else:
+                await delSticker(thinkStc)
+                await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
         except Exception as e:
-            # Fallback to text message in case of photo sending failure
-            k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
+            if settings["auto_delete"]:
+                await delSticker(thinkStc)
+                k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
+                await asyncio.sleep(DELETE_TIME)
+                await k.delete()
+                try:
+                    await message.delete()
+                except:
+                    pass
+            else:
+                await delSticker(thinkStc)
+                await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
     else:
-        k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
+        if settings["auto_delete"]:
+            await delSticker(thinkStc)
+            k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
+            await asyncio.sleep(DELETE_TIME)
+            await k.delete()
+            try:
+                await message.delete()
+            except:
+                pass
+        else:
+            await delSticker(thinkStc)
+            await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
 
-    # Auto-delete functionality
-    if settings["auto_delete"]:
-        await asyncio.sleep(DELETE_TIME)
-        await k.delete()
-        try:
-            await message.delete()
-        except:
-            pass
-
-# Function for handling spelling checks and suggestions
-async def advantage_spell_chok(message, ai_sts):
+async def advantage_spell_chok(message):
     search = message.text
     google_search = search.replace(" ", "+")
-    btn = [
-        [
-            InlineKeyboardButton("⚠️ Instructions ⚠️", callback_data='instructions'),
-            InlineKeyboardButton("🔎 Search Google 🔍", url=f"https://www.google.com/search?q={google_search}")
-        ]
-    ]
-
+    btn = [[
+        InlineKeyboardButton("⚠️ Instructions ⚠️", callback_data='instructions'),
+        InlineKeyboardButton("🔎 Search Google 🔍", url=f"https://www.google.com/search?q={google_search}")
+    ]]
     try:
         movies = await get_poster(search, bulk=True)
-    except Exception:
-        n = await message.reply_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+    except:
+        n = await message.reply_photo(photo=random.choice(PICS), caption=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1070,7 +1101,7 @@ async def advantage_spell_chok(message, ai_sts):
         return
 
     if not movies:
-        n = await message.reply_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+        n = await message.reply_photo(photo=random.choice(PICS), caption=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1082,26 +1113,14 @@ async def advantage_spell_chok(message, ai_sts):
     user = message.from_user.id if message.from_user else 0
     buttons = [[
         InlineKeyboardButton(text=movie.get('title'), callback_data=f"spolling#{movie.movieID}#{user}")
-    ] for movie in movies]
-
-    buttons.append([InlineKeyboardButton("🚫 Close 🚫", callback_data="close_data")])
-
-    # Check if the message is from the bot to edit or reply
-    if message.from_user.is_self:
-        s = await message.edit_text(
-            text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the exact match for: <code>{search}</code>.\nBut here are some suggestions:",
-            reply_markup=InlineKeyboardMarkup(buttons),
-            parse_mode=enums.ParseMode.HTML,
-        )
-    else:
-        s = await message.reply_text(
-            text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the exact match for: <code>{search}</code>.\nBut here are some suggestions:",
-            reply_markup=InlineKeyboardMarkup(buttons),
-            parse_mode=enums.ParseMode.HTML,
-        )
-
-    await ai_sts.delete()
-    await asyncio.sleep(60)
+    ]
+        for movie in movies
+    ]
+    buttons.append(
+        [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
+    )
+    s = await message.reply_photo(photo=random.choice(PICS), caption=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇", reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+    await asyncio.sleep(300)
     await s.delete()
     try:
         await message.delete()
