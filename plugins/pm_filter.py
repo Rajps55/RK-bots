@@ -43,7 +43,6 @@ async def aks_downloader(bot, query):
         reply_markup=InlineKeyboardMarkup(btn)
     )
 
-# Listen for incoming messages in groups
 @Client.on_message(filters.group & filters.text & filters.incoming)
 async def give_filter(client, message):
     await message.react(emoji=random.choice(REACTIONS))
@@ -83,7 +82,7 @@ async def give_filter(client, message):
 
         # Check if message is in support group and provide search results
         if message.chat.id == SUPPORT_GROUP:
-            files, offset, total_results = await get_search_results(message.text)  # Updated line
+            files, offset, total_results = await get_search_results(message.text)  # Get search results
             if files:
                 btn = [[InlineKeyboardButton("Here", url=FILMS_LINK)]]
                 await message.reply_text(f'Total {total_results} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
