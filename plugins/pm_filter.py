@@ -25,7 +25,7 @@ settings = {
 
 print(settings)
 # Valid reactions list
-REACTIONS = ["👍", "👎", "❤️", "😂", "😮", "😢", "😡"]
+REACTIONS = ["🔥", "❤️", "😍", "⚡"]
 
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def aks_downloader(bot, query):
