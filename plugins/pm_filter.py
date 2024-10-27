@@ -1106,7 +1106,7 @@ async def advantage_spell_chok(message, ai_sts):
         await message.delete()
     except:
         pass
-
+"""
 # Function to get search results based on the user's query
 async def get_search_results(query):
     # Replace this with your actual search logic
@@ -1151,6 +1151,5 @@ async def get_settings(chat_id):
 # Placeholder for an AI-based spell-checking function
 async def ai_spell_check(search):
     # Replace this with your actual AI spell-checking logic
-    return None
-
+    """
 
