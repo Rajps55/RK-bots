@@ -23,11 +23,15 @@ settings = {
    
 }
 print("cap:", cap)
+cap = some_value_or_function()
 print("files_link:", files_link)
 print("del_msg:", del_msg)
 print(settings)
+
 # Valid reactions list
 REACTIONS = ["🔥", "❤️", "😍", "⚡"]
+
+
 
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def aks_downloader(bot, query):
