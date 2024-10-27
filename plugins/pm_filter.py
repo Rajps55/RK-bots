@@ -920,69 +920,52 @@ async def delSticker(st):
         await st.delete()
     except:
         pass
-
-# Function to handle the auto-filtering of movie search requests
 async def auto_filter(client, msg, spoll=False):
+    thinkStc = ''
     thinkStc = await msg.reply_sticker(sticker=random.choice(STICKERS_IDS))
-
-    # Get message settings and search term
     if not spoll:
-        settings = await get_settings(msg.chat.id)
-        search = msg.text
-        files, offset, total_results = await get_search_results(search)  # Ensure total_results is fetched
-
+        message = msg
+        settings = await get_settings(message.chat.id)
+        search = message.text
+        files, offset, total_results = await get_search_results(search)
         if not files:
             if settings["spell_check"]:
-                await thinkStc.delete()
-                ai_sts = await msg.reply_text('<b>AI is checking for your spelling. Please wait...</b>')
+                await delSticker(thinkStc)
+                ai_sts = await msg.reply_text('<b>Ai is Cheking For Your Spelling. Please Wait.</b>')
                 is_misspelled = await ai_spell_check(search)
-
                 if is_misspelled:
-                    await ai_sts.edit(f'<b>AI suggested <code>{is_misspelled}</code>.\nSearching for <code>{is_misspelled}</code>...</b>')
+                    await ai_sts.edit(f'<b>Ai Suggested <code>{is_misspelled}</code>\nSo Im Searching for <code>{is_misspelled}</code></b>')
                     await asyncio.sleep(2)
                     msg.text = is_misspelled
                     await ai_sts.delete()
                     return await auto_filter(client, msg)
-
+                await delSticker(thinkStc)
                 await ai_sts.delete()
-                await advantage_spell_chok(msg, ai_sts)
+                await advantage_spell_chok(msg)
             return
     else:
         settings = await get_settings(msg.message.chat.id)
-        search, files, offset, total_results = spoll  # Extract total_results from spoll
-
+        message = msg.message.reply_to_message  # msg will be callback query
+        search, files, offset, total_results = spoll
     if spoll:
         await msg.message.delete()
-
-    req = msg.from_user.id if msg.from_user else 0
-    key = f"{msg.chat.id}-{msg.id}"
+    req = message.from_user.id if message.from_user else 0
+    key = f"{message.chat.id}-{message.id}"
     temp.FILES[key] = files
     BUTTONS[key] = search
     files_link = ""
 
-    # Construct buttons and links based on settings
-    btn = await construct_buttons(files, settings, key, req, offset, msg, total_results)  # Pass total_results here
-
-    # Get IMDb poster if settings allow
-    imdb = await get_poster(search, file=(files[0]).file_name) if settings["imdb"] else None
-    cap = await format_caption(imdb, settings, search, msg)
-
-    CAP[key] = cap
-    del_msg = f"\n\n<b>⚠️ This message will auto-delete after <code>{get_readable_time(DELETE_TIME)}</code> to avoid copyright issues.</b>" if settings["auto_delete"] else ''
-    
-    await send_response(imdb, cap, files_link, del_msg, btn, msg)
-
-# Function to construct buttons based on the search results
-async def construct_buttons(files, settings, key, req, offset, message, total_results):  # Accept total_results as an argument
-    files_link = ""
-    btn = []
-
     if settings['links']:
+        btn = []
         for file_num, file in enumerate(files, start=1):
-            files_link += f"<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"
+            files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
     else:
-        btn = [[InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}') for file in files]]
-
+        btn = [[
+            InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
+        ]
+            for file in files
+        ]
+    
     if offset != "":
         if settings['shortlink']:
             btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{message.chat.id}_{key}')),
