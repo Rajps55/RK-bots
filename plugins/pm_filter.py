@@ -243,7 +243,7 @@ async def handle_admin_mention(client, message, admin_id):
             )
     except Exception as e:
         logging.error(f"Error forwarding message to admin: {e}")
-                                    
+ """                                   
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
     if PM_SEARCH:
@@ -254,7 +254,34 @@ async def pm_search(client, message):
             btn = [[
                 InlineKeyboardButton("Here", url=FILMS_LINK)
             ]]
-            await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
+            await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))"""
+
+@Client.on_message(filters.private & filters.text)
+async def pm_search(client, message):
+    """Search for movies in PM and provide results if available."""
+    if PM_SEARCH:
+        try:
+            await auto_filter(client, message)
+        except Exception as e:
+            logging.error(f"Error in auto_filter: {e}")
+            await message.reply_text("Oops! An error occurred while searching.")
+    else:
+        try:
+            files, n_offset, total = await get_search_results(message.text)
+            if int(total) > 0:
+                btn = [[
+                    InlineKeyboardButton("Here", url=FILMS_LINK)
+                ]]
+                await message.reply_text(
+                    f'Total {total} results found in this group',
+                    reply_markup=InlineKeyboardMarkup(btn)
+                )
+            else:
+                await message.reply_text("No results found for your query.")
+        except Exception as e:
+            logging.error(f"Error in get_search_results: {e}")
+            await message.reply_text("An error occurred while searching.")
+            
 
 @Client.on_callback_query(filters.regex(r"^next"))
 async def next_page(bot, query):
