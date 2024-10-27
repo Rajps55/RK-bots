@@ -1041,15 +1041,19 @@ async def auto_filter(client, msg, spoll=False):
                     await message.delete()
                 except:
                     pass
-    else:
-        k = await message.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
-        if settings["auto_delete"]:
-            await asyncio.sleep(DELETE_TIME)
-            await k.delete()
-            try:
-                await message.delete()
-            except:
-                pass
+        else:
+            if message.from_user.is_self:
+                k = await message.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
+            else:
+                k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
+    
+            if settings["auto_delete"]:
+                await asyncio.sleep(DELETE_TIME)
+                await k.delete()
+                try:
+                    await message.delete()
+               except:
+                    pass
 
 async def advantage_spell_chok(message, s):
     search = message.text
@@ -1061,7 +1065,7 @@ async def advantage_spell_chok(message, s):
     try:
         movies = await get_poster(search, bulk=True)
     except:
-        n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+        n = await message.reply_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1070,7 +1074,7 @@ async def advantage_spell_chok(message, s):
             pass
         return
     if not movies:
-        n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+        n = await message.reply_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1078,16 +1082,25 @@ async def advantage_spell_chok(message, s):
         except:
             pass
         return
+    
     user = message.from_user.id if message.from_user else 0
     buttons = [[
         InlineKeyboardButton(text=movie.get('title'), callback_data=f"spolling#{movie.movieID}#{user}")
-    ]
-        for movie in movies
-    ]
-    buttons.append(
-        [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
-    )
-    s = await s.edit_text(text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇", reply_markup=InlineKeyboardMarkup(buttons))
+    ] for movie in movies]
+    buttons.append([InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")])
+
+    # Yaha bhi check karenge agar message bot ne bheja ho toh edit karein, warna reply karein
+    if message.from_user.is_self:
+        s = await message.edit_text(
+            text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+    else:
+        s = await message.reply_text(
+            text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+    
     await asyncio.sleep(300)
     await s.delete()
     try:
