@@ -929,7 +929,7 @@ async def auto_filter(client, msg, spoll=False):
     if not spoll:
         settings = await get_settings(msg.chat.id)
         search = msg.text
-        files, offset, total_results = await get_search_results(search)
+        files, offset, total_results = await get_search_results(search)  # Ensure total_results is fetched
 
         if not files:
             if settings["spell_check"]:
@@ -949,7 +949,7 @@ async def auto_filter(client, msg, spoll=False):
             return
     else:
         settings = await get_settings(msg.message.chat.id)
-        search, files, offset, total_results = spoll
+        search, files, offset, total_results = spoll  # Extract total_results from spoll
 
     if spoll:
         await msg.message.delete()
@@ -961,7 +961,7 @@ async def auto_filter(client, msg, spoll=False):
     files_link = ""
 
     # Construct buttons and links based on settings
-    btn = await construct_buttons(files, settings, key, req, offset, msg)
+    btn = await construct_buttons(files, settings, key, req, offset, msg, total_results)  # Pass total_results here
 
     # Get IMDb poster if settings allow
     imdb = await get_poster(search, file=(files[0]).file_name) if settings["imdb"] else None
@@ -973,7 +973,7 @@ async def auto_filter(client, msg, spoll=False):
     await send_response(imdb, cap, files_link, del_msg, btn, msg)
 
 # Function to construct buttons based on the search results
-async def construct_buttons(files, settings, key, req, offset, message):
+async def construct_buttons(files, settings, key, req, offset, message, total_results):  # Accept total_results as an argument
     files_link = ""
     btn = []
 
@@ -991,7 +991,7 @@ async def construct_buttons(files, settings, key, req, offset, message):
             btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", callback_data=f"send_all#{key}"),
                            InlineKeyboardButton("📰 Languages 📰", callback_data=f"languages#{key}#{req}#0")])
 
-        btn.append([InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
+        btn.append([InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),  # Use total_results here
                      InlineKeyboardButton(text="Next »", callback_data=f"next_{req}_{key}_{offset}")])
     else:
         if settings['shortlink']:
@@ -1003,6 +1003,7 @@ async def construct_buttons(files, settings, key, req, offset, message):
 
     btn.append([InlineKeyboardButton("🚫 Close 🚫", callback_data="close_data")])
     return btn
+    
 
 # Function to format the caption for the response message
 async def format_caption(imdb, settings, search, message):
