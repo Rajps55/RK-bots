@@ -17,6 +17,13 @@ from fuzzywuzzy import process
 
 BUTTONS = {}
 CAP = {}
+
+settings = {
+    "auto_delete": True,
+   
+}
+
+print(settings)
 # Valid reactions list
 REACTIONS = ["👍", "👎", "❤️", "😂", "😮", "😢", "😡"]
 
