@@ -1004,8 +1004,7 @@ async def auto_filter(client, msg, spoll=False):
             countries=imdb["countries"],
             certificates=imdb["certificates"],
             languages=imdb["languages"],
-            director=imdb["directo
-            r"],
+            director=imdb["director"],
             writer=imdb["writer"],
             producer=imdb["producer"],
             composer=imdb["composer"],
@@ -1126,50 +1125,4 @@ async def advantage_spell_chok(message):
         await message.delete()
     except:
         pass
-"""
-# Function to get search results based on the user's query
-async def get_search_results(query):
-    # Replace this with your actual search logic
-    return [], "", 0
-
-# Function to get movie poster information from IMDb or another source
-async def get_poster(search, bulk=False):
-    # Replace this with your actual poster-fetching logic
-    return {}
-
-# Function to convert file size into a human-readable format
-def get_size(size):
-    if size < 1024:
-        return f"{size} B"
-    elif size < 1048576:
-        return f"{size / 1024:.2f} KB"
-    elif size < 1073741824:
-        return f"{size / 1048576:.2f} MB"
-    else:
-        return f"{size / 1073741824:.2f} GB"
-
-# Function to get a readable time format for display
-def get_readable_time(seconds):
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{hours}h {minutes}m {seconds}s"
-
-# Function to fetch and return settings for the current user or group
-async def get_settings(chat_id):
-    # Replace with your actual logic to fetch settings
-    return {
-        "spell_check": True,
-        "auto_delete": True,
-        "imdb": True,
-        "template": "<b>Title: {title}</b>",
-        "links": True,
-        "shortlink": True,
-        "url": "https://your-api-url.com",
-        "api": "your_api_key",
-    }
-
-# Placeholder for an AI-based spell-checking function
-async def ai_spell_check(search):
-    # Replace this with your actual AI spell-checking logic
-    """
 
