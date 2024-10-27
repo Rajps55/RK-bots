@@ -18,7 +18,7 @@ from fuzzywuzzy import process
 BUTTONS = {}
 CAP = {}
 # Valid reactions list
-REACTIONS = ["👍", "❤️", "😂"]  # Add valid emoji characters
+REACTIONS = ['👍', '👎', '😂', '😍']  # Example valid emojis
 
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def aks_downloader(bot, query):
