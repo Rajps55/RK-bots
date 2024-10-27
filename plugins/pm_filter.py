@@ -23,7 +23,6 @@ settings = {
    
 }
 print("cap:", CAP)
-cap = some_value_or_function()
 print("files_link:", files_link)
 print("del_msg:", del_msg)
 print(settings)
