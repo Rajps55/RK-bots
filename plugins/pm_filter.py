@@ -83,10 +83,10 @@ async def give_filter(client, message):
 
         # Check if message is in support group and provide search results
         if message.chat.id == SUPPORT_GROUP:
-            files, offset, total = await get_search_results(message.text)
+            files, offset, total_results = await get_search_results(message.text)  # Updated line
             if files:
                 btn = [[InlineKeyboardButton("Here", url=FILMS_LINK)]]
-                await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
+                await message.reply_text(f'Total {total_results} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
             return
 
         # Ignore commands
@@ -138,7 +138,7 @@ async def give_filter(client, message):
 
         # Default action: auto-filter
         else:
-            await auto_filter(client, message)
+            await auto_filter(client, message)  # Make sure to update this function as well
 
     # If auto-filter is off, notify and delete the message
     else:
@@ -149,6 +149,7 @@ async def give_filter(client, message):
             await message.delete()
         except Exception as e:
             print(f"Error deleting message: {e}")
+
 
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
