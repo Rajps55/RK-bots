@@ -34,7 +34,7 @@ async def aks_downloader(bot, query):
     await query.edit_message_reply_markup(
         reply_markup=InlineKeyboardMarkup(btn)
     )
-
+"""
 @Client.on_message(filters.group & filters.text & filters.incoming)
 async def give_filter(client, message):
     await message.react(emoji=random.choice(REACTIONS))
@@ -123,7 +123,105 @@ async def give_filter(client, message):
         try:
             await message.delete()
         except:
-            pass
+            pass"""
+
+@Client.on_message(filters.group & filters.text & filters.incoming)
+async def apply_filter(client, message):
+    await message.react(emoji=random.choice(REACTIONS))
+    settings = await get_settings(message.chat.id)
+    chatid = message.chat.id
+    userid = message.from_user.id if message.from_user else None
+
+    # Check for group subscription
+    if GROUP_FSUB:
+        btn = await is_subscribed(client, message, settings['fsub']) if settings.get('is_fsub', IS_FSUB) else None
+        if btn:
+            btn.append([InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{chatid}")])
+            reply_markup = InlineKeyboardMarkup(btn)
+            try:
+                await client.restrict_chat_member(chatid, message.from_user.id, ChatPermissions(can_send_messages=False))
+                await message.reply_photo(
+                    photo=random.choice(PICS),
+                    caption=f"👋 Hello {message.from_user.mention},\n\nPlease join and try again. 😇",
+                    reply_markup=reply_markup,
+                    parse_mode=enums.ParseMode.HTML
+                )
+                return
+            except Exception as e:
+                print(f"Error restricting member: {e}")
+
+    # Auto filter functionality
+    if settings.get("auto_filter"):
+        if not userid:
+            await message.reply("I'm not working for anonymous admin!")
+            return
+
+        # Handling requests in the support group
+        if message.chat.id == SUPPORT_GROUP:
+            files, offset, total = await get_search_results(message.text)
+            if files:
+                btn = [[InlineKeyboardButton("Here", url=FILMS_LINK)]]
+                await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
+            return
+            
+        # Command handling
+        if message.text.startswith("/"):
+            return
+        
+        # Admin mentions handling
+        if '@admin' in message.text.lower() or '@admins' in message.text.lower():
+            if await is_check_admin(client, message.chat.id, message.from_user.id):
+                return
+            admins = []
+            async for member in client.get_chat_members(chat_id=message.chat.id, filter=enums.ChatMembersFilter.ADMINISTRATORS):
+                if not member.user.is_bot:
+                    admins.append(member.user.id)
+                    if member.status == enums.ChatMemberStatus.OWNER:
+                        await handle_admin_mention(client, message, member.user.id)
+            hidden_mentions = (f'[\u2064](tg://user?id={user_id})' for user_id in admins)
+            await message.reply_text('Report sent!' + ''.join(hidden_mentions))
+            return
+
+        # Link handling
+        if re.findall(r'https?://\S+|www\.\S+|t\.me/\S+', message.text):
+            if await is_check_admin(client, message.chat.id, message.from_user.id):
+                return
+            await message.delete()
+            return await message.reply('Links not allowed here!')
+
+        # Request handling
+        if '#request' in message.text.lower():
+            if message.from_user.id in ADMINS:
+                return
+            await client.send_message(LOG_CHANNEL, f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}")
+            await message.reply_text("Request sent!")
+            return
+            
+        # Fallback to auto filter function
+        await auto_filter(client, message)
+    else:
+        k = await message.reply_text('Auto Filter Off! ❌')
+        await asyncio.sleep(5)
+        await k.delete()
+        try:
+            await message.delete()
+        except Exception as e:
+            print(f"Error deleting message: {e}")
+
+async def handle_admin_mention(client, message, admin_id):
+    if message.reply_to_message:
+        try:
+            sent_msg = await message.reply_to_message.forward(admin_id)
+            await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link}>Go to message</a>", disable_web_page_preview=True)
+        except Exception as e:
+            print(f"Error forwarding reply to admin: {e}")
+    else:
+        try:
+            sent_msg = await message.forward(admin_id)
+            await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>", disable_web_page_preview=True)
+        except Exception as e:
+            print(f"Error forwarding message to admin: {e}")
+                                    
 
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
