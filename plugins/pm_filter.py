@@ -81,6 +81,7 @@ async def give_filter(client, message):
             await message.reply("I'm not working for anonymous admin!")
             return
 
+        # Check if message is in support group and provide search results
         if message.chat.id == SUPPORT_GROUP:
             files, offset, total = await get_search_results(message.text)
             if files:
@@ -88,9 +89,11 @@ async def give_filter(client, message):
                 await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
             return
 
+        # Ignore commands
         if message.text.startswith("/"):
             return
             
+        # Admin mention handling
         elif '@admin' in message.text.lower() or '@admins' in message.text.lower():
             if await is_check_admin(client, message.chat.id, message.from_user.id):
                 return
@@ -99,60 +102,53 @@ async def give_filter(client, message):
                 if not member.user.is_bot:
                     admins.append(member.user.id)
                     if member.status == enums.ChatMemberStatus.OWNER:
-                        if message.reply_to_message:
-                            try:
+                        try:
+                            if message.reply_to_message:
                                 sent_msg = await message.reply_to_message.forward(member.user.id)
-                                await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link}>Go to message</a>", disable_web_page_preview=True)
-                            except Exception as e:
-                                print(f"Error forwarding message to admin: {e}")
-                        else:
-                            try:
+                            else:
                                 sent_msg = await message.forward(member.user.id)
-                                await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>", disable_web_page_preview=True)
-                            except Exception as e:
-                                print(f"Error forwarding message to admin: {e}")
+                            await sent_msg.reply_text(
+                                f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link if message.reply_to_message else message.link}>Go to message</a>",
+                                disable_web_page_preview=True
+                            )
+                        except Exception as e:
+                            print(f"Error forwarding message to admin: {e}")
 
-            hidden_mentions = (f'[\u2064](tg://user?id={user_id})' for user_id in admins)
-            await message.reply_text('Report sent!' + ''.join(hidden_mentions))
+            hidden_mentions = ''.join(f'[\u2064](tg://user?id={user_id})' for user_id in admins)
+            await message.reply_text('Report sent!' + hidden_mentions)
             return
 
         # Link filtering
         elif re.findall(r'https?://\S+|www\.\S+|t\.me/\S+', message.text):
-    # Agar user admin hai toh kuch mat karo
-             if await is_check_admin(client, message.chat.id, message.from_user.id):
-                 return
-    # Agar link detect hota hai aur user admin nahi hai toh message delete kar do
+            if await is_check_admin(client, message.chat.id, message.from_user.id):
+                return
             await message.delete()
             return await message.reply('Links not allowed here!')
 
-# Request handling
+        # Request handling
         elif '#request' in message.text.lower():
-    # Agar request admin ke through aa rahi hai toh kuch mat karo
             if message.from_user.id in ADMINS:
                 return
-    # Non-admin users ke request ko ek alag channel mein forward karo
             await client.send_message(
                 LOG_CHANNEL, 
                 f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}"
-             )
+            )
             await message.reply_text("Request sent!")
             return
 
-# Default action: auto-filter
+        # Default action: auto-filter
         else:
-    # Agar above conditions match nahi karti, toh auto_filter function ko call karo
             await auto_filter(client, message)
 
-# Agar auto-filter off hai toh user ko inform karo aur message delete kar do
-        else:
-           k = await message.reply_text('Auto Filter Off! ❌')
-           await asyncio.sleep(5)
-           await k.delete()
-           try:
-              await message.delete()
-            except:
-                pass
-
+    # If auto-filter is off, notify and delete the message
+    else:
+        k = await message.reply_text('Auto Filter Off! ❌')
+        await asyncio.sleep(5)
+        await k.delete()
+        try:
+            await message.delete()
+        except Exception as e:
+            print(f"Error deleting message: {e}")
 
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
