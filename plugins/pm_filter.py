@@ -23,8 +23,6 @@ settings = {
    
 }
 print("cap:", CAP)
-print("files_link:", files_link)
-print("del_msg:", del_msg)
 print(settings)
 
 # Valid reactions list
