@@ -875,13 +875,15 @@ async def ai_spell_check(wrong_name):
         search_results = imdb.search_movie(wrong_name)
         movie_list = [movie['title'] for movie in search_results]
         return movie_list
+    
     movie_list = await search_movie(wrong_name)
     if not movie_list:
         return
+
     for _ in range(5):
         closest_match = process.extractOne(wrong_name, movie_list)
         if not closest_match or closest_match[1] <= 80:
-            return 
+            return
         movie = closest_match[0]
         files, offset, total_results = await get_search_results(movie)
         if files:
@@ -889,35 +891,42 @@ async def ai_spell_check(wrong_name):
         movie_list.remove(movie)
     return
 
-
 async def delSticker(st):
     try:
-        await st.delete()
-    except:
-        pass
+        if st:
+            await st.delete()
+    except Exception as e:
+        print(f"Failed to delete sticker: {e}")
+
 async def auto_filter(client, msg, spoll=False):
-    thinkStc = ''
     thinkStc = await msg.reply_sticker(sticker=random.choice(STICKERS_IDS))
     if not spoll:
         message = msg
         settings = await get_settings(message.chat.id)
         search = message.text
         files, offset, total_results = await get_search_results(search)
+        
         if not files:
-            if settings["spell_check"]:
+            if settings.get("spell_check"):
                 await delSticker(thinkStc)
-                ai_sts = await msg.reply_text('<b>Ai is Cheking For Your Spelling. Please Wait.</b>')
+                ai_sts = await msg.reply_text('<b>Ai is Checking Your Spelling. Please Wait.</b>')
                 is_misspelled = await ai_spell_check(search)
+                
                 if is_misspelled:
-                    await ai_sts.edit(f'<b>Ai Suggested <code>{is_misspelled}</code>\nSo Im Searching for <code>{is_misspelled}</code></b>')
+                    await ai_sts.edit(f'<b>Ai Suggested <code>{is_misspelled}</code>\nSo I’m Searching for <code>{is_misspelled}</code></b>')
                     await asyncio.sleep(2)
                     msg.text = is_misspelled
                     await ai_sts.delete()
                     return await auto_filter(client, msg)
+
                 await delSticker(thinkStc)
                 await ai_sts.delete()
-                await advantage_spell_chok(msg)
+                
+                # Ensure `advantage_spell_chok` is defined before calling
+                if 'advantage_spell_chok' in globals():
+                    await advantage_spell_chok(msg)
             return
+            
     else:
         settings = await get_settings(msg.message.chat.id)
         message = msg.message.reply_to_message  # msg will be callback query
