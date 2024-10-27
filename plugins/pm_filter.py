@@ -36,18 +36,25 @@ async def aks_downloader(bot, query):
         reply_markup=InlineKeyboardMarkup(btn)
     )
 
+# Listen for incoming messages in groups
 @Client.on_message(filters.group & filters.text & filters.incoming)
 async def give_filter(client, message):
     await message.react(emoji=random.choice(REACTIONS))
     settings = await get_settings(message.chat.id)
     chatid = message.chat.id
     userid = message.from_user.id if message.from_user else None
+
+    # Debugging line to check settings
+    print(settings)
+
+    # Check if 'auto_filter' exists in settings
+    auto_filter_enabled = settings.get("auto_filter", False)
+
+    # Check group subscription and handle restrictions
     if GROUP_FSUB:
-        btn = await is_subscribed(client, message, settings['fsub']) if settings.get('is_fsub', IS_FSUB) else None
+        btn = await is_subscribed(client, message, settings.get('fsub')) if settings.get('is_fsub', IS_FSUB) else None
         if btn:
-            btn.append(
-                [InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{chatid}")]
-            )
+            btn.append([InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{chatid}")])
             reply_markup = InlineKeyboardMarkup(btn)
             try:
                 await client.restrict_chat_member(chatid, message.from_user.id, ChatPermissions(can_send_messages=False))
@@ -59,22 +66,21 @@ async def give_filter(client, message):
                 )
                 return
             except Exception as e:
-                print(e)
-    else:
-        pass
-    if settings["auto_filter"]:
+                print(f"Error restricting user: {e}")
+
+    # Auto filter responses
+    if auto_filter_enabled:
         if not userid:
             await message.reply("I'm not working for anonymous admin!")
             return
+
         if message.chat.id == SUPPORT_GROUP:
             files, offset, total = await get_search_results(message.text)
             if files:
-                btn = [[
-                    InlineKeyboardButton("Here", url=FILMS_LINK)
-                ]]
+                btn = [[InlineKeyboardButton("Here", url=FILMS_LINK)]]
                 await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
             return
-            
+
         if message.text.startswith("/"):
             return
             
@@ -90,14 +96,15 @@ async def give_filter(client, message):
                             try:
                                 sent_msg = await message.reply_to_message.forward(member.user.id)
                                 await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link}>Go to message</a>", disable_web_page_preview=True)
-                            except:
-                                pass
+                            except Exception as e:
+                                print(f"Error forwarding message to admin: {e}")
                         else:
                             try:
                                 sent_msg = await message.forward(member.user.id)
                                 await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>", disable_web_page_preview=True)
-                            except:
-                                pass
+                            except Exception as e:
+                                print(f"Error forwarding message to admin: {e}")
+
             hidden_mentions = (f'[\u2064](tg://user?id={user_id})' for user_id in admins)
             await message.reply_text('Report sent!' + ''.join(hidden_mentions))
             return
