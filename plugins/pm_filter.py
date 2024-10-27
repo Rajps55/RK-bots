@@ -17,18 +17,7 @@ from fuzzywuzzy import process
 
 BUTTONS = {}
 CAP = {}
-
-settings = {
-    "auto_delete": True,
-   
-}
-print("cap:", CAP)
-print(settings)
-
-# Valid reactions list
-REACTIONS = ["🔥", "❤️", "😍", "⚡"]
-
-
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def aks_downloader(bot, query):
@@ -52,18 +41,12 @@ async def give_filter(client, message):
     settings = await get_settings(message.chat.id)
     chatid = message.chat.id
     userid = message.from_user.id if message.from_user else None
-
-    # Debugging line to check settings
-    print(settings)
-
-    # Check if 'auto_filter' exists in settings
-    auto_filter_enabled = settings.get("auto_filter", False)
-
-    # Check group subscription and handle restrictions
     if GROUP_FSUB:
-        btn = await is_subscribed(client, message, settings.get('fsub')) if settings.get('is_fsub', IS_FSUB) else None
+        btn = await is_subscribed(client, message, settings['fsub']) if settings.get('is_fsub', IS_FSUB) else None
         if btn:
-            btn.append([InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{chatid}")])
+            btn.append(
+                [InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{chatid}")]
+            )
             reply_markup = InlineKeyboardMarkup(btn)
             try:
                 await client.restrict_chat_member(chatid, message.from_user.id, ChatPermissions(can_send_messages=False))
@@ -75,27 +58,25 @@ async def give_filter(client, message):
                 )
                 return
             except Exception as e:
-                print(f"Error restricting user: {e}")
-
-    # Auto filter responses
-    if auto_filter_enabled:
+                print(e)
+    else:
+        pass
+    if settings["auto_filter"]:
         if not userid:
             await message.reply("I'm not working for anonymous admin!")
             return
-
-        # Check if message is in support group and provide search results
         if message.chat.id == SUPPORT_GROUP:
-            files, offset, total_results = await get_search_results(message.text)  # Get search results
+            files, offset, total = await get_search_results(message.text)
             if files:
-                btn = [[InlineKeyboardButton("Here", url=FILMS_LINK)]]
-                await message.reply_text(f'Total {total_results} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
+                btn = [[
+                    InlineKeyboardButton("Here", url=FILMS_LINK)
+                ]]
+                await message.reply_text(f'Total {total} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
             return
-
-        # Ignore commands
+            
         if message.text.startswith("/"):
             return
             
-        # Admin mention handling
         elif '@admin' in message.text.lower() or '@admins' in message.text.lower():
             if await is_check_admin(client, message.chat.id, message.from_user.id):
                 return
@@ -104,54 +85,45 @@ async def give_filter(client, message):
                 if not member.user.is_bot:
                     admins.append(member.user.id)
                     if member.status == enums.ChatMemberStatus.OWNER:
-                        try:
-                            if message.reply_to_message:
+                        if message.reply_to_message:
+                            try:
                                 sent_msg = await message.reply_to_message.forward(member.user.id)
-                            else:
+                                await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link}>Go to message</a>", disable_web_page_preview=True)
+                            except:
+                                pass
+                        else:
+                            try:
                                 sent_msg = await message.forward(member.user.id)
-                            await sent_msg.reply_text(
-                                f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link if message.reply_to_message else message.link}>Go to message</a>",
-                                disable_web_page_preview=True
-                            )
-                        except Exception as e:
-                            print(f"Error forwarding message to admin: {e}")
-
-            hidden_mentions = ''.join(f'[\u2064](tg://user?id={user_id})' for user_id in admins)
-            await message.reply_text('Report sent!' + hidden_mentions)
+                                await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>", disable_web_page_preview=True)
+                            except:
+                                pass
+            hidden_mentions = (f'[\u2064](tg://user?id={user_id})' for user_id in admins)
+            await message.reply_text('Report sent!' + ''.join(hidden_mentions))
             return
 
-        # Link filtering
         elif re.findall(r'https?://\S+|www\.\S+|t\.me/\S+', message.text):
             if await is_check_admin(client, message.chat.id, message.from_user.id):
                 return
             await message.delete()
             return await message.reply('Links not allowed here!')
-
-        # Request handling
+        
         elif '#request' in message.text.lower():
             if message.from_user.id in ADMINS:
                 return
-            await client.send_message(
-                LOG_CHANNEL, 
-                f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}"
-            )
+            await client.send_message(LOG_CHANNEL, f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}")
             await message.reply_text("Request sent!")
             return
-
-        # Default action: auto-filter
+            
         else:
-            await auto_filter(client, message)  # Make sure to update this function as well
-
-    # If auto-filter is off, notify and delete the message
+            await auto_filter(client, message)
     else:
         k = await message.reply_text('Auto Filter Off! ❌')
         await asyncio.sleep(5)
         await k.delete()
         try:
             await message.delete()
-        except Exception as e:
-            print(f"Error deleting message: {e}")
-
+        except:
+            pass
 
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
@@ -170,17 +142,12 @@ async def next_page(bot, query):
     ident, req, key, offset = query.data.split("_")
     if int(req) not in [query.from_user.id, 0]:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
-
     try:
         offset = int(offset)
     except:
         offset = 0
-
     search = BUTTONS.get(key)
     cap = CAP.get(key)
-    if cap is None:
-        cap = ""  # Default value to avoid TypeError
-
     if not search:
         await query.answer(f"Hello {query.from_user.first_name},\nSend New Request Again!", show_alert=True)
         return
@@ -193,7 +160,6 @@ async def next_page(bot, query):
 
     if not files:
         return
-
     temp.FILES[key] = files
     settings = await get_settings(query.message.chat.id)
     del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
@@ -201,23 +167,24 @@ async def next_page(bot, query):
 
     if settings['links']:
         btn = []
-        for file_num, file in enumerate(files, start=offset + 1):
+        for file_num, file in enumerate(files, start=offset+1):
             files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{query.message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
     else:
         btn = [[
             InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
-        ] for file in files]
-
+        ]
+            for file in files
+        ]
     if settings['shortlink']:
-        btn.insert(0, [
-            InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{key}')),
-            InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#{offset}")
-        ])
+        btn.insert(0,
+            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{key}')),
+            InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#{offset}")]
+        )
     else:
-        btn.insert(0, [
-            InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}"),
-            InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#{offset}")
-        ])
+        btn.insert(0,
+            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}"),
+            InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#{offset}")]
+        )
 
     if 0 < offset <= MAX_BTN:
         off_set = 0
@@ -225,31 +192,31 @@ async def next_page(bot, query):
         off_set = None
     else:
         off_set = offset - MAX_BTN
-
+        
     if n_offset == 0:
-        btn.append([
-            InlineKeyboardButton("« ʙᴀᴄᴋ", callback_data=f"next_{req}_{key}_{off_set}"),
-            InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons")
-        ])
+        btn.append(
+            [InlineKeyboardButton("« ʙᴀᴄᴋ", callback_data=f"next_{req}_{key}_{off_set}"),
+             InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons")]
+        )
     elif off_set is None:
-        btn.append([
-            InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons"),
-            InlineKeyboardButton("ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{n_offset}")
-        ])
+        btn.append(
+            [InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons"),
+             InlineKeyboardButton("ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{n_offset}")])
     else:
-        btn.append([
-            InlineKeyboardButton("« ʙᴀᴄᴋ", callback_data=f"next_{req}_{key}_{off_set}"),
-            InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons"),
-            InlineKeyboardButton("ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{n_offset}")
-        ])
-
-    btn.append([InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")])
-
+        btn.append(
+            [
+                InlineKeyboardButton("« ʙᴀᴄᴋ", callback_data=f"next_{req}_{key}_{off_set}"),
+                InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons"),
+                InlineKeyboardButton("ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{n_offset}")
+            ]
+        )
+    btn.append(
+        [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
+    )
     try:
         await query.message.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True)
     except MessageNotModified:
         pass
-
 
 @Client.on_callback_query(filters.regex(r"^languages"))
 async def languages_cb_handler(client: Client, query: CallbackQuery):
@@ -976,27 +943,38 @@ async def auto_filter(client, msg, spoll=False):
     
     if offset != "":
         if settings['shortlink']:
-            btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{message.chat.id}_{key}')),
-                           InlineKeyboardButton("📰 Languages 📰", callback_data=f"languages#{key}#{req}#0")])
+            btn.insert(0,
+                [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{message.chat.id}_{key}')),
+                InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#0")]
+            )
         else:
-            btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", callback_data=f"send_all#{key}"),
-                           InlineKeyboardButton("📰 Languages 📰", callback_data=f"languages#{key}#{req}#0")])
+            btn.insert(0,
+                [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}"),
+                 InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#0")]
+            )
 
-        btn.append([InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),  # Use total_results here
-                     InlineKeyboardButton(text="Next »", callback_data=f"next_{req}_{key}_{offset}")])
+        btn.append(
+            [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
+             InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{offset}")]
+        )
     else:
         if settings['shortlink']:
-            btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{message.chat.id}_{key}'))])
+            btn.insert(0,
+                [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{message.chat.id}_{key}'))]
+            )
         else:
-            btn.insert(0, [InlineKeyboardButton("♻️ Send All ♻️", callback_data=f"send_all#{key}")])
-
-        btn.append([InlineKeyboardButton(text="🚸 No More Pages 🚸", callback_data="buttons")])
-
-    btn.append([InlineKeyboardButton("🚫 Close 🚫", callback_data="close_data")])
-    return btn
+            btn.insert(0,
+                [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}")]
+            )
+        btn.append(
+            [InlineKeyboardButton(text="🚸 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs 🚸", callback_data="buttons")]
+        )
+    btn.append(
+        [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
+    )
     imdb = await get_poster(search, file=(files[0]).file_name) if settings["imdb"] else None
     TEMPLATE = settings['template']
-    if imdb:
+    if imdb: 
         cap = TEMPLATE.format(
             query=search,
             title=imdb['title'],
@@ -1033,62 +1011,47 @@ async def auto_filter(client, msg, spoll=False):
     CAP[key] = cap
     del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
     if imdb and imdb.get('poster'):
+        await message.delete()  
         try:
+            k = await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await delSticker(thinkStc)
-                k = await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
                 await asyncio.sleep(DELETE_TIME)
                 await k.delete()
                 try:
                     await message.delete()
                 except:
                     pass
-            else:
-                await delSticker(thinkStc)
-                await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
         except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
             pic = imdb.get('poster')
             poster = pic.replace('.jpg', "._V1_UX360.jpg")
+            k = await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await delSticker(thinkStc)
-                k = await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
                 await asyncio.sleep(DELETE_TIME)
                 await k.delete()
                 try:
                     await message.delete()
                 except:
                     pass
-            else:
-                await delSticker(thinkStc)
-                await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), quote=True)
         except Exception as e:
+            k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await delSticker(thinkStc)
-                k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
                 await asyncio.sleep(DELETE_TIME)
                 await k.delete()
                 try:
                     await message.delete()
                 except:
                     pass
-            else:
-                await delSticker(thinkStc)
-                await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
     else:
+        k = await s.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
         if settings["auto_delete"]:
-            await delSticker(thinkStc)
-            k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
             await asyncio.sleep(DELETE_TIME)
             await k.delete()
             try:
                 await message.delete()
             except:
                 pass
-        else:
-            await delSticker(thinkStc)
-            await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, quote=True)
 
-async def advantage_spell_chok(message):
+async def advantage_spell_chok(message, s):
     search = message.text
     google_search = search.replace(" ", "+")
     btn = [[
@@ -1098,7 +1061,7 @@ async def advantage_spell_chok(message):
     try:
         movies = await get_poster(search, bulk=True)
     except:
-        n = await message.reply_photo(photo=random.choice(PICS), caption=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+        n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1106,9 +1069,8 @@ async def advantage_spell_chok(message):
         except:
             pass
         return
-
     if not movies:
-        n = await message.reply_photo(photo=random.choice(PICS), caption=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
+        n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
         await n.delete()
         try:
@@ -1116,7 +1078,6 @@ async def advantage_spell_chok(message):
         except:
             pass
         return
-
     user = message.from_user.id if message.from_user else 0
     buttons = [[
         InlineKeyboardButton(text=movie.get('title'), callback_data=f"spolling#{movie.movieID}#{user}")
@@ -1126,11 +1087,10 @@ async def advantage_spell_chok(message):
     buttons.append(
         [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
     )
-    s = await message.reply_photo(photo=random.choice(PICS), caption=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇", reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+    s = await s.edit_text(text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇", reply_markup=InlineKeyboardMarkup(buttons))
     await asyncio.sleep(300)
     await s.delete()
     try:
         await message.delete()
     except:
         pass
-
