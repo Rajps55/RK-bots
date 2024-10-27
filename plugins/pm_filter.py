@@ -14,6 +14,10 @@ from utils import get_size, is_subscribed, is_check_admin, get_wish, get_shortli
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results,delete_files
 from fuzzywuzzy import process
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 BUTTONS = {}
 CAP = {}
@@ -207,7 +211,7 @@ async def apply_filter(client, message):
             await message.delete()
         except Exception as e:
             print(f"Error deleting message: {e}")
-
+"""
 async def handle_admin_mention(client, message, admin_id):
     if message.reply_to_message:
         try:
@@ -220,9 +224,26 @@ async def handle_admin_mention(client, message, admin_id):
             sent_msg = await message.forward(admin_id)
             await sent_msg.reply_text(f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>", disable_web_page_preview=True)
         except Exception as e:
-            print(f"Error forwarding message to admin: {e}")
-                                    
+            print(f"Error forwarding message to admin: {e}")"""
 
+async def handle_admin_mention(client, message, admin_id):
+    """Forward the message to the admin and notify them."""
+    try:
+        if message.reply_to_message:
+            sent_msg = await message.reply_to_message.forward(admin_id)
+            await sent_msg.reply_text(
+                f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.reply_to_message.link}>Go to message</a>",
+                disable_web_page_preview=True
+            )
+        else:
+            sent_msg = await message.forward(admin_id)
+            await sent_msg.reply_text(
+                f"#Attention\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ <a href={message.link}>Go to message</a>",
+                disable_web_page_preview=True
+            )
+    except Exception as e:
+        logging.error(f"Error forwarding message to admin: {e}")
+                                    
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
     if PM_SEARCH:
