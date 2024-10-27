@@ -1042,6 +1042,7 @@ async def auto_filter(client, msg, spoll=False):
                 except:
                     pass
     else:
+        s = await client.send_message(chat_id=message.chat.id, text="Initial message here")
         k = await s.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
         if settings["auto_delete"]:
             await asyncio.sleep(DELETE_TIME)
