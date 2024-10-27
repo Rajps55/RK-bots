@@ -116,29 +116,43 @@ async def give_filter(client, message):
             await message.reply_text('Report sent!' + ''.join(hidden_mentions))
             return
 
+        # Link filtering
         elif re.findall(r'https?://\S+|www\.\S+|t\.me/\S+', message.text):
-            if await is_check_admin(client, message.chat.id, message.from_user.id):
-                return
+    # Agar user admin hai toh kuch mat karo
+             if await is_check_admin(client, message.chat.id, message.from_user.id):
+                 return
+    # Agar link detect hota hai aur user admin nahi hai toh message delete kar do
             await message.delete()
             return await message.reply('Links not allowed here!')
-        
+
+# Request handling
         elif '#request' in message.text.lower():
+    # Agar request admin ke through aa rahi hai toh kuch mat karo
             if message.from_user.id in ADMINS:
                 return
-            await client.send_message(LOG_CHANNEL, f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}")
+    # Non-admin users ke request ko ek alag channel mein forward karo
+            await client.send_message(
+                LOG_CHANNEL, 
+                f"#Request\n★ User: {message.from_user.mention}\n★ Group: {message.chat.title}\n\n★ Message: {re.sub(r'#request', '', message.text.lower())}"
+             )
             await message.reply_text("Request sent!")
             return
-            
+
+# Default action: auto-filter
         else:
+    # Agar above conditions match nahi karti, toh auto_filter function ko call karo
             await auto_filter(client, message)
-    else:
-        k = await message.reply_text('Auto Filter Off! ❌')
-        await asyncio.sleep(5)
-        await k.delete()
-        try:
-            await message.delete()
-        except:
-            pass
+
+# Agar auto-filter off hai toh user ko inform karo aur message delete kar do
+        else:
+           k = await message.reply_text('Auto Filter Off! ❌')
+           await asyncio.sleep(5)
+           await k.delete()
+           try:
+              await message.delete()
+            except:
+                pass
+
 
 @Client.on_message(filters.private & filters.text)
 async def pm_search(client, message):
